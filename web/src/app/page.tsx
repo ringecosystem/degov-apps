@@ -8,6 +8,7 @@ import { CustomTable } from '@/components/custom-table';
 import { SortableCell } from '@/components/sortable-cell';
 import { useDaoData } from '@/hooks/useDaoData';
 import type { DaoInfo } from '@/utils/config';
+import { formatNetworkName } from '@/utils/helper';
 
 import { DaoList } from './_components/daoList';
 import { MobileSearchDialog } from './_components/MobileSearchDialog';
@@ -57,7 +58,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="flex items-center gap-[10px] hover:underline"
           >
-            <Image src={value?.daoIcon} alt="dao" width={34} height={34} />
+            <Image src={value?.daoIcon} alt="dao" width={34} height={34} className="rounded-full" />
             <span className="text-[16px]">{value?.name}</span>
           </Link>
         );
@@ -70,8 +71,14 @@ export default function Home() {
       render(value) {
         return (
           <div className="flex items-center justify-center gap-[10px]">
-            <Image src={value?.networkIcon} alt="network" width={24} height={24} />
-            <span className="text-[16px]">{value?.network}</span>
+            <Image
+              src={value?.networkIcon}
+              alt="network"
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
+            <span className="text-[16px]">{formatNetworkName(value?.network)}</span>
           </div>
         );
       }
