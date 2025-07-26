@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ColumnType } from '@/components/custom-table';
 import { CustomTable } from '@/components/custom-table';
 import { SortableCell } from '@/components/sortable-cell';
+import { Button } from '@/components/ui/button';
 import { useDaoData } from '@/hooks/useDaoData';
 import type { DaoInfo } from '@/utils/config';
 
@@ -164,14 +165,20 @@ export default function Home() {
               </button>
             )}
           </div>
-          {/* <div className="fixed right-0 bottom-[20px] left-[30px] grid grid-cols-[calc(50%-20px)_calc(50%-20px)] gap-[20px] md:static md:grid-cols-2 md:justify-end">
-            <Button variant="outline" className="rounded-[100px]" asChild>
+          <div className="fixed right-0 bottom-[20px] left-[20px] grid grid-cols-[calc(50%-20px)_calc(50%-20px)] gap-[20px] md:static md:grid-cols-1 md:justify-end">
+            <Button variant="outline" className="hidden rounded-[100px]" asChild>
               <Link href="/add/existing">Add Existing DAO</Link>
             </Button>
-            <Button variant="outline" className="rounded-[100px]">
-              With Assistance
+            <Button variant="outline" className="rounded-[100px]" asChild>
+              <Link
+                href="https://docs.google.com/forms/u/1/d/e/1FAIpQLSdYjX87_xxTQFLl-brEj87vxU3ucH682nYy3bGUNpR4nL9HaQ/viewform"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                With Assistance
+              </Link>
             </Button>
-          </div> */}
+          </div>
         </div>
       </div>
 

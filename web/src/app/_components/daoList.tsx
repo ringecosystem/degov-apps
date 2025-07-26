@@ -1,4 +1,5 @@
 import { Empty } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { DaoInfo } from '@/utils/config';
 
@@ -40,10 +41,12 @@ export const DaoList = ({ daoInfo, isLoading }: DaoListProps) => {
       <Empty label="No DAOs found" />
     </div>
   ) : (
-    <div className="flex flex-col gap-[10px] md:hidden">
-      {daoInfo?.map((v) => {
-        return <DaoItem {...v} key={v.id} />;
-      })}
-    </div>
+    <ScrollArea className="h-[calc(100vh-210px)] md:hidden">
+      <div className="flex flex-col gap-[10px]">
+        {daoInfo?.map((v) => {
+          return <DaoItem {...v} key={v.id} />;
+        })}
+      </div>
+    </ScrollArea>
   );
 };
