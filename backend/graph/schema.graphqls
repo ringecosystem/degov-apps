@@ -1,0 +1,249 @@
+# GraphQL schema for DeGov Apps
+#
+# https://gqlgen.com/getting-started/
+
+scalar Time
+
+### ==== directives
+
+# Authentication directive
+directive @auth(
+  required: Boolean = true
+) on FIELD_DEFINITION
+
+# Authorization directive for resource ownership
+directive @authorize(
+  rule: AuthRule!
+) on FIELD_DEFINITION
+
+enum AuthRule {
+  OWNER_ONLY     # User can only access their own resources
+  ADMIN_ONLY     # Admin only access
+  PUBLIC         # Public access (no auth required)
+}
+
+### ==== entities
+
+type User {
+  id: ID!
+  address: String!
+  email: String
+  likedDaos: [UserLikedDao!]!
+  followedDaos: [UserFollowedDao!]!
+  channels: [UserChannel!]!
+  notificationRecords: [NotificationRecord!]!
+}
+
+type Dao {
+  id: ID!
+  chainId: Int!
+  chainName: String!
+  name: String!
+  code: String!
+  seq: Int!
+  state: String!
+  configLink: String!
+  timeSyncd: Time
+  ctime: Time!
+  utime: Time
+  liked: Boolean
+  subscribed: Boolean
+}
+
+type UserLikedDao {
+  id: ID!
+  daoCode: String!
+  userId: String!
+  ctime: Time!
+  user: User!
+  dao: Dao!
+}
+
+type UserFollowedDao {
+  id: ID!
+  chainId: Int!
+  daoCode: String!
+  userId: String!
+  enableNewProposal: Int!
+  enableVotingEndReminder: Int!
+  ctime: Time!
+  user: User!
+  dao: Dao!
+}
+
+type NotificationRecord {
+  id: ID!
+  chainId: Int!
+  chainName: String!
+  daoName: String!
+  daoCode: String!
+  type: NotificationType!
+  targetId: String
+  userId: String!
+  status: NotificationStatus!
+  message: String
+  retryTimes: Int!
+  ctime: Time!
+  user: User!
+}
+
+type UserChannel {
+  id: ID!
+  userId: String!
+  verified: Int!
+  channelType: ChannelType!
+  channelValue: String!
+  payload: String
+  ctime: Time!
+  user: User!
+}
+
+### === outputs
+
+type GetNonceOutput {
+  nonce: String!
+}
+
+type LoginOutput {
+  token: String!
+}
+
+### === enums
+
+enum NotificationType {
+  NEW_PROPOSAL
+  VOTE
+  STATUS
+  VOTE_END_REMINDER
+}
+
+enum NotificationStatus {
+  SENT_OK
+  SENT_FAIL
+}
+
+enum ChannelType {
+  EMAIL
+  SMS
+  PUSH
+}
+
+### === inputs
+
+input GetNonceInput {
+  length: Int
+}
+
+input LoginInput {
+  message: String!
+  signature: String!
+}
+
+input CreateUserInput {
+  address: String!
+  email: String
+}
+
+input UpdateUserInput {
+  email: String
+}
+
+input CreateDaoInput {
+  chainId: Int!
+  name: String!
+  code: String!
+  configLink: String!
+}
+
+input LikeDaoInput {
+  daoCode: String!
+  userId: String!
+}
+
+input FollowDaoInput {
+  chainId: Int!
+  daoCode: String!
+  userId: String!
+  enableNewProposal: Int!
+  enableVotingEndReminder: Int!
+}
+
+input CreateUserChannelInput {
+  userId: String!
+  channelType: ChannelType!
+  channelValue: String!
+  payload: String
+}
+
+input CreateNotificationRecordInput {
+  chainId: Int!
+  chainName: String!
+  daoName: String!
+  daoCode: String!
+  type: NotificationType!
+  targetId: String
+  userId: String!
+  message: String
+}
+
+### ==== graphql
+
+type Query {
+  # Auth queries (no authentication required)
+  nonce(input: GetNonceInput!): String!
+
+  # DAO queries (no authentication required, but auth info affects result)
+  daos: [Dao!]! @auth(required: false)
+  dao(id: ID!): Dao @auth(required: false)
+  daoByCode(code: String!): Dao @auth(required: false)
+
+  # User queries (require authentication for some)
+  users: [User!]! @auth @authorize(rule: ADMIN_ONLY)
+  user(id: ID!): User @auth(required: false)
+  userByAddress(address: String!): User @auth(required: false)
+  me: User! @auth @authorize(rule: OWNER_ONLY)
+
+  # User interactions (require authentication)
+  userLikedDaos(userId: String!): [UserLikedDao!]! @auth @authorize(rule: OWNER_ONLY)
+  userFollowedDaos(userId: String!): [UserFollowedDao!]! @auth @authorize(rule: OWNER_ONLY)
+
+  # Notifications (require authentication)
+  notificationRecords(userId: String!): [NotificationRecord!]! @auth @authorize(rule: OWNER_ONLY)
+  userChannels(userId: String!): [UserChannel!]! @auth @authorize(rule: OWNER_ONLY)
+}
+
+type Mutation {
+  # Auth mutations
+  login(input: LoginInput!): LoginOutput!
+
+  # User mutations (require authentication)
+  createUser(input: CreateUserInput!): User! @auth @authorize(rule: OWNER_ONLY)
+  updateUser(input: UpdateUserInput!): User! @auth @authorize(rule: OWNER_ONLY)
+  deleteUser(id: ID!): Boolean! @auth @authorize(rule: OWNER_ONLY)
+
+  # DAO mutations (require authentication)
+  createDao(input: CreateDaoInput!): Dao! @auth
+  updateDao(id: ID!, input: CreateDaoInput!): Dao! @auth
+  deleteDao(id: ID!): Boolean! @auth
+
+  # User interactions (require authentication)
+  likeDao(input: LikeDaoInput!): UserLikedDao! @auth @authorize(rule: OWNER_ONLY)
+  unlikeDao(userId: String!, daoCode: String!): Boolean! @auth @authorize(rule: OWNER_ONLY)
+  followDao(input: FollowDaoInput!): UserFollowedDao! @auth @authorize(rule: OWNER_ONLY)
+  unfollowDao(userId: String!, daoCode: String!): Boolean! @auth @authorize(rule: OWNER_ONLY)
+
+  # Notifications (require authentication)
+  createUserChannel(input: CreateUserChannelInput!): UserChannel! @auth @authorize(rule: OWNER_ONLY)
+  updateUserChannel(id: ID!, input: CreateUserChannelInput!): UserChannel! @auth @authorize(rule: OWNER_ONLY)
+  deleteUserChannel(id: ID!): Boolean! @auth @authorize(rule: OWNER_ONLY)
+  verifyUserChannel(id: ID!): UserChannel! @auth @authorize(rule: OWNER_ONLY)
+
+  createNotificationRecord(
+    input: CreateNotificationRecordInput!
+  ): NotificationRecord! @auth @authorize(rule: OWNER_ONLY)
+}
+
+# type Subscription {
+#   # notificationCreated(userId: String!): NotificationRecord!
+#   # daoUpdated(daoCode: String!): Dao!
+# }
