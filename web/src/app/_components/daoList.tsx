@@ -8,6 +8,7 @@ import { DaoItem } from './daoItem';
 interface DaoListProps {
   daoInfo: DaoInfo[];
   isLoading?: boolean;
+  onNetworkClick?: (network: string) => void;
 }
 
 export const DaoListSkeleton = () => {
@@ -31,7 +32,7 @@ export const DaoListSkeleton = () => {
   );
 };
 
-export const DaoList = ({ daoInfo, isLoading }: DaoListProps) => {
+export const DaoList = ({ daoInfo, isLoading, onNetworkClick }: DaoListProps) => {
   if (isLoading) {
     return <DaoListSkeleton />;
   }
@@ -44,7 +45,7 @@ export const DaoList = ({ daoInfo, isLoading }: DaoListProps) => {
     <ScrollArea className="h-[calc(100vh-210px)] md:hidden">
       <div className="flex flex-col gap-[10px]">
         {daoInfo?.map((v) => {
-          return <DaoItem {...v} key={v.id} />;
+          return <DaoItem {...v} key={v.id} onNetworkClick={onNetworkClick} />;
         })}
       </div>
     </ScrollArea>
