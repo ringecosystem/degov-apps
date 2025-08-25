@@ -20,6 +20,7 @@ type Resolver struct {
 	userLikedService       *services.UserLikedDaoService
 	userSubscribedService  *services.UserSubscribedDaoService
 	userInteractionService *services.UserInteractionService
+	evmChainService        *services.EvmChainService
 }
 
 func NewResolver() *Resolver {
@@ -32,5 +33,6 @@ func NewResolver() *Resolver {
 		userLikedService:       services.NewUserLikedDaoService(),
 		userSubscribedService:  services.NewUserSubscribedDaoService(),
 		userInteractionService: services.NewUserInteractionService(),
+		evmChainService:        services.NewEvmChainService(),
 	}
 }

@@ -85,6 +85,12 @@ func (r *queryResolver) DaoConfig(ctx context.Context, input *gqlmodels.GetDaoCo
 	})
 }
 
+// EvmAbi is the resolver for the evmAbi field.
+func (r *queryResolver) EvmAbi(ctx context.Context, input gqlmodels.EvmAbiInput) ([]*gqlmodels.EvmAbiOutput, error) {
+	// panic(fmt.Errorf("not implemented: EvmAbi - evmAbi"))
+	return r.evmChainService.GetAbi(input)
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 

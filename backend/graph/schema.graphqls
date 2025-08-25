@@ -39,6 +39,11 @@ enum ProposalState {
   EXPIRED
 }
 
+enum AbiType {
+  PROXY
+  IMPLEMENTATION
+}
+
 ### ==== entities
 
 type User {
@@ -89,6 +94,12 @@ type DaoChip {
   utime: Time
 }
 
+type EvmAbiOutput {
+  address: String!
+  abi: String!
+  type: AbiType!
+}
+
 type Proposal {
   id: ID!
   daoCode: String!
@@ -105,53 +116,6 @@ type Proposal {
   utime: Time
 }
 
-# type UserLikedDao {
-#   id: ID!
-#   daoCode: String!
-#   userId: String!
-#   ctime: Time!
-#   user: User!
-#   dao: Dao!
-# }
-
-# type UserFollowedDao {
-#   id: ID!
-#   chainId: Int!
-#   daoCode: String!
-#   userId: String!
-#   enableNewProposal: Int!
-#   enableVotingEndReminder: Int!
-#   ctime: Time!
-#   user: User!
-#   dao: Dao!
-# }
-
-# type NotificationRecord {
-#   id: ID!
-#   chainId: Int!
-#   chainName: String!
-#   daoName: String!
-#   daoCode: String!
-#   type: NotificationType!
-#   targetId: String
-#   userId: String!
-#   status: NotificationStatus!
-#   message: String
-#   retryTimes: Int!
-#   ctime: Time!
-#   user: User!
-# }
-
-# type UserChannel {
-#   id: ID!
-#   userId: String!
-#   verified: Int!
-#   channelType: ChannelType!
-#   channelValue: String!
-#   payload: String
-#   ctime: Time!
-#   user: User!
-# }
 
 ### === outputs
 
@@ -163,25 +127,6 @@ type LoginOutput {
   token: String!
 }
 
-### === enums
-
-# enum NotificationType {
-#   NEW_PROPOSAL
-#   VOTE
-#   STATUS
-#   VOTE_END_REMINDER
-# }
-
-# enum NotificationStatus {
-#   SENT_OK
-#   SENT_FAIL
-# }
-
-# enum ChannelType {
-#   EMAIL
-#   SMS
-#   PUSH
-# }
 
 ### === inputs
 
@@ -199,34 +144,17 @@ input GetDaoConfigInput {
   format: ConfigFormat
 }
 
-# input CreateUserInput {
-#   address: String!
-#   email: String
-# }
-
-# input UpdateUserInput {
-#   email: String
-# }
-
-# input CreateDaoInput {
-#   chainId: Int!
-#   name: String!
-#   code: String!
-#   configLink: String!
-# }
 
 input ModifyLikeDaoInput {
   daoCode: String!
   action: LikeAction!
 }
 
-# input FollowDaoInput {
-#   chainId: Int!
-#   daoCode: String!
-#   userId: String!
-#   enableNewProposal: Int!
-#   enableVotingEndReminder: Int!
-# }
+
+input EvmAbiInput {
+  chain: Int!
+  contract: String!
+}
 
 ### ==== graphql
 
@@ -238,20 +166,14 @@ type Query {
   daos: [Dao!]! @auth(required: false)
   likedDaos: [Dao!]! @auth(required: false)
   subscribedDaos: [Dao!]! @auth(required: false)
-  daoConfig(input: GetDaoConfigInput): String!
-
-  # dao(id: ID!): Dao @auth(required: false)
-  # daoByCode(code: String!): Dao @auth(required: false)
-
-  # # User queries (require authentication for some)
-  # users: [User!]! @auth @authorize(rule: ADMIN_ONLY)
-  # user(id: ID!): User @auth(required: false)
-  # userByAddress(address: String!): User @auth(required: false)
-  # me: User! @auth @authorize(rule: OWNER_ONLY)
+  daoConfig(input: GetDaoConfigInput): String! @auth(required: false)
 
   # # User interactions (require authentication)
   # userLikedDaos(userId: String!): [UserLikedDao!]! @auth @authorize(rule: OWNER_ONLY)
   # userFollowedDaos(userId: String!): [UserFollowedDao!]! @auth @authorize(rule: OWNER_ONLY)
+
+  # Tool queries
+  evmAbi(input: EvmAbiInput!): [EvmAbiOutput!] @auth(required: false)
 }
 
 type Mutation {
@@ -265,6 +187,4 @@ type Mutation {
 }
 
 # type Subscription {
-#   # notificationCreated(userId: String!): NotificationRecord!
-#   # daoUpdated(daoCode: String!): Dao!
 # }
