@@ -12,6 +12,7 @@ import '@rainbow-me/rainbowkit/styles.css';
 
 export function DAppProvider({ children }: React.PropsWithChildren<unknown>) {
   const rainbowKitTheme = useRainbowKitTheme();
+  
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

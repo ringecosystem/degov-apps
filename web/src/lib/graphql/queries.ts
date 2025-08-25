@@ -2,7 +2,7 @@ import { gql } from 'graphql-request';
 
 // Query for getting nonce
 export const QUERY_NONCE = gql`
-  query QueryNonce($input: NonceInput!) {
+  query QueryNonce($input: GetNonceInput!) {
     nonce(input: $input)
   }
 `;
@@ -54,9 +54,18 @@ export const QUERY_DAOS = gql`
       endpoint
       logo
       chainLogo
-    }
-    likedDaos {
-      code
+      liked
+      lastProposal {
+        chainId
+        daoCode
+        proposalId
+        proposalLink
+        proposalCreatedAt
+        proposalAtBlock
+        state
+        timeNextTrack
+        timesTrack
+      }
     }
     subscribedDaos {
       code

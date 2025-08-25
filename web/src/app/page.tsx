@@ -5,12 +5,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import type { ColumnType } from '@/components/custom-table';
 import { CustomTable } from '@/components/custom-table';
+import { LikeButton } from '@/components/like-button';
 import { SortableCell } from '@/components/sortable-cell';
 import { Button } from '@/components/ui/button';
 import TagGroup from '@/components/ui/tag-group';
 import { useGraphqlDaoData } from '@/hooks/useGraphqlDaoData';
 import type { DaoInfo } from '@/utils/config';
-import { formatNetworkName } from '@/utils/helper';
+import { formatNetworkName, formatTimeAgo } from '@/utils/helper';
 
 import { DaoList } from './_components/daoList';
 import { MobileSearchDialog } from './_components/MobileSearchDialog';
@@ -43,16 +44,34 @@ export default function Home() {
         const bProposals = b.proposals || 0;
         return sortState === 'asc' ? aProposals - bProposals : bProposals - aProposals;
       });
+      return filtered;
     }
 
-    return filtered;
+    const sortByLastProposal = (a: DaoInfo, b: DaoInfo) => {
+      const aTime = a.lastProposal?.proposalCreatedAt;
+      const bTime = b.lastProposal?.proposalCreatedAt;
+
+      if (aTime && bTime) {
+        return new Date(bTime).getTime() - new Date(aTime).getTime();
+      }
+
+      if (aTime && !bTime) return -1;
+      if (!aTime && bTime) return 1;
+
+      return 0;
+    };
+
+    const favorites = filtered.filter((dao) => dao.favorite).sort(sortByLastProposal);
+    const others = filtered.filter((dao) => !dao.favorite).sort(sortByLastProposal);
+
+    return [...favorites, ...others];
   }, [daoData, searchQuery, sortState]);
 
   const columns: ColumnType<DaoInfo>[] = [
     {
       title: 'Name',
       key: 'name',
-      className: 'w-[34%] text-left',
+      className: 'w-[34.48%] text-left',
       render(value) {
         return (
           <div className="flex items-center gap-[10px]">
@@ -79,7 +98,7 @@ export default function Home() {
     {
       title: 'Network',
       key: 'network',
-      className: 'w-[28%] text-left',
+      className: 'w-[18.97%] text-left',
       render(value) {
         return (
           <div className="flex items-center justify-start gap-[10px]">
@@ -96,33 +115,56 @@ export default function Home() {
       }
     },
     {
+      title: 'Last Proposal',
+      key: 'lastProposal',
+      className: 'w-[18.97%] text-center',
+      render(value) {
+        const proposalLink = value?.lastProposal?.proposalLink;
+        const proposalTime = value?.lastProposal?.proposalCreatedAt;
+
+        if (!proposalLink) {
+          return <span className="text-[16px]">-</span>;
+        }
+
+        return (
+          <Link
+            href={proposalLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-[6px] text-[16px] hover:underline"
+            title="View latest proposal"
+          >
+            <span className="text-[16px]">{formatTimeAgo(proposalTime || '')}</span>
+          </Link>
+        );
+      }
+    },
+    {
       title: <SortableCell onClick={setSortState} sortState={sortState} />,
       key: 'proposals',
-      className: 'w-[28%] text-center',
+      className: 'w-[18.97%] text-center',
       render(value) {
         return <span className="text-[16px]">{value?.proposals}</span>;
       }
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      className: 'w-[8.62%] text-right',
+      render(value) {
+        return (
+          <div className="flex items-center justify-end gap-[10px]">
+            {/* <Link
+              href={`/setting/${value?.id}`}
+              className="cursor-pointer transition-opacity hover:opacity-80"
+            >
+              <Image src="/setting.svg" alt="setting" width={20} height={20} />
+            </Link> */}
+            <LikeButton dao={value} isLiked={value.favorite} className="flex-shrink-0" />
+          </div>
+        );
+      }
     }
-    // {
-    //   title: 'Action',
-    //   key: 'action',
-    //   className: 'w-[20%] text-right',
-    //   render(value) {
-    //     return (
-    //       <div className="flex items-center justify-end gap-[10px]">
-    //         <Link
-    //           href={`/setting/${value?.id}`}
-    //           className="cursor-pointer transition-opacity hover:opacity-80"
-    //         >
-    //           <Image src="/setting.svg" alt="setting" width={20} height={20} />
-    //         </Link>
-    //         <button className="cursor-pointer transition-opacity hover:opacity-80">
-    //           <Image src="/favorite.svg" alt="favorite" width={20} height={20} />
-    //         </button>
-    //       </div>
-    //     );
-    //   }
-    // }
   ];
 
   const handleSearch = useCallback((query: string) => {

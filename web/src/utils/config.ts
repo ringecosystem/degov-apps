@@ -1,6 +1,6 @@
 import yaml from 'js-yaml';
 
-import type { Chip } from '@/lib/graphql/types';
+import type { Chip, LastProposal } from '@/lib/graphql/types';
 
 export interface DaoConfig {
   name: string;
@@ -35,6 +35,7 @@ export interface DaoInfo extends Record<string, unknown> {
   indexer: string;
   chainId?: string;
   chips?: Chip[];
+  lastProposal?: LastProposal | null;
 }
 
 export async function loadConfig(): Promise<ConfigData> {
