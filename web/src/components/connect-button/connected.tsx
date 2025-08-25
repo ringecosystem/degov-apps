@@ -1,7 +1,8 @@
 import { ChevronDown, Power } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useAccount } from 'wagmi';
 
 import { AddressAvatar } from '@/components/address-avatar';
 import { AddressResolver } from '@/components/address-resolver';
@@ -23,10 +24,16 @@ interface ConnectedProps {
 
 export const Connected = ({ address }: ConnectedProps) => {
   const { disconnectWallet } = useDisconnectWallet();
+  const { chain } = useAccount();
+
+  const getBlockExplorerUrl = useMemo(() => {
+    return `${chain?.blockExplorers?.default?.url}/address/${address}`;
+  }, [chain, address]);
 
   const handleDisconnect = useCallback(() => {
     disconnectWallet(address);
   }, [disconnectWallet, address]);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
@@ -53,7 +60,26 @@ export const Connected = ({ address }: ConnectedProps) => {
             </TooltipTrigger>
             <TooltipContent>{address}</TooltipContent>
           </Tooltip>
-          <ClipboardIconButton text={address} size={20} />
+          <ClipboardIconButton text={address} size={16} className="size-[16px] flex-shrink-0" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={getBlockExplorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex cursor-pointer items-center justify-center transition-colors hover:opacity-80"
+              >
+                <Image
+                  src="/external-link.svg"
+                  alt="Open in block explorer"
+                  width={16}
+                  height={16}
+                  className="size-[16px] flex-shrink-0 opacity-50"
+                />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>View on block explorer</TooltipContent>
+          </Tooltip>
         </div>
         <DropdownMenuSeparator className="my-[20px]" />
         <div className="flex flex-col justify-center gap-[20px]">

@@ -205,31 +205,6 @@ export default function Home() {
       </div>
 
       {
-        // <>
-        //   {filteredAndSortedData.length === 0 && searchQuery ? (
-        //     <div className="text-muted-foreground py-8 text-center">
-        //       <div className="mb-4">
-        //         <Image
-        //           src="/empty.svg"
-        //           alt="No results"
-        //           width={64}
-        //           height={64}
-        //           className="mx-auto"
-        //         />
-        //       </div>
-        //       <p className="text-lg">No DAOs found</p>
-        //       <p className="text-sm">Try searching with different keywords</p>
-        //       <button
-        //         onClick={clearSearch}
-        //         className="mt-2 text-blue-500 underline hover:text-blue-600"
-        //       >
-        //         View all DAOs
-        //       </button>
-        //     </div>
-        //   ) : (
-
-        //   )}
-        // </>
         <>
           <CustomTable
             columns={columns}

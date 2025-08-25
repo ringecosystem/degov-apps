@@ -1,15 +1,11 @@
-"use client";
-import { Copy, Check } from "lucide-react";
-import { useCallback, useEffect, useState, useRef } from "react";
-import { useCopyToClipboard } from "react-use";
+'use client';
+import { Check } from 'lucide-react';
+import Image from 'next/image';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCopyToClipboard } from 'react-use';
 
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface ClipboardIconButtonProps {
   text?: string;
@@ -20,11 +16,11 @@ interface ClipboardIconButtonProps {
 }
 
 const ClipboardIconButton = ({
-  text = "",
+  text = '',
   size,
   color,
   className,
-  strokeWidth = 1,
+  strokeWidth = 1
 }: ClipboardIconButtonProps) => {
   const [state, copyToClipboard] = useCopyToClipboard();
   const [copied, setCopied] = useState(false);
@@ -42,7 +38,7 @@ const ClipboardIconButton = ({
 
   useEffect(() => {
     if (state.error) {
-      console.error("Copy failed:", state.error);
+      console.error('Copy failed:', state.error);
     }
   }, [state]);
 
@@ -74,7 +70,7 @@ const ClipboardIconButton = ({
       <TooltipTrigger asChild>
         <div
           onClick={handleCopy}
-          className="size-4 cursor-pointer"
+          className="flex flex-shrink-0 cursor-pointer items-center"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -83,26 +79,25 @@ const ClipboardIconButton = ({
             size={size}
             color={color}
             className={cn(
-              "text-muted-foreground hover:text-muted-foreground/80",
+              'text-muted-foreground hover:text-muted-foreground/80',
               className,
-              copied ? "block" : "hidden"
+              copied ? 'block' : 'hidden'
             )}
           />
-          <Copy
-            strokeWidth={strokeWidth}
-            size={size}
-            color={color}
+          <Image
+            src="/copy.svg"
+            alt="Copy"
+            width={size as number}
+            height={size as number}
             className={cn(
-              "text-muted-foreground hover:text-muted-foreground/80",
+              'text-muted-foreground hover:text-muted-foreground/80 flex-shrink-0 opacity-50',
               className,
-              copied ? "hidden" : "block"
+              copied ? 'hidden' : 'block'
             )}
           />
         </div>
       </TooltipTrigger>
-      <TooltipContent>
-        {copied ? "Copied!" : "Copy to clipboard"}
-      </TooltipContent>
+      <TooltipContent>{copied ? 'Copied!' : 'Copy to clipboard'}</TooltipContent>
     </Tooltip>
   );
 };
