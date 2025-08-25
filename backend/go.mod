@@ -8,7 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.16.2
 	github.com/go-co-op/gocron/v2 v2.16.3
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/golang-migrate/migrate/v4 v4.18.1
+	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/jinzhu/copier v0.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/machinebox/graphql v0.2.2
