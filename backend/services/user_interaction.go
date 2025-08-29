@@ -27,11 +27,11 @@ func NewUserInteractionService() *UserInteractionService {
 }
 
 func (s *UserInteractionService) ModifyLikeDao(baseInput types.BasicInput[gqlmodels.ModifyLikeDaoInput]) (bool, error) {
-	usess := baseInput.User
+	user := baseInput.User
 	input := baseInput.Input
 
 	_, err := s.daoService.Inspect(types.BasicInput[string]{
-		User:  usess,
+		User:  user,
 		Input: input.DaoCode,
 	})
 	if err != nil {
@@ -39,7 +39,7 @@ func (s *UserInteractionService) ModifyLikeDao(baseInput types.BasicInput[gqlmod
 	}
 
 	var existingLikedDao dbmodels.UserLikedDao
-	err = s.db.Where("user_id = ? AND dao_code = ?", usess.Id, input.DaoCode).First(&existingLikedDao).Error
+	err = s.db.Where("user_id = ? AND dao_code = ?", user.Id, input.DaoCode).First(&existingLikedDao).Error
 	isNotFoundError := false
 	if err != nil {
 		isNotFoundError = errors.Is(err, gorm.ErrRecordNotFound)
@@ -55,8 +55,8 @@ func (s *UserInteractionService) ModifyLikeDao(baseInput types.BasicInput[gqlmod
 			like := &dbmodels.UserLikedDao{
 				ID:          utils.NextIDString(),
 				DaoCode:     input.DaoCode,
-				UserID:      usess.Id,
-				UserAddress: usess.Address,
+				UserID:      user.Id,
+				UserAddress: user.Address,
 				CTime:       time.Now(),
 			}
 
@@ -68,7 +68,7 @@ func (s *UserInteractionService) ModifyLikeDao(baseInput types.BasicInput[gqlmod
 	case gqlmodels.LikeActionUnlike:
 		if !isNotFoundError {
 			// Remove existing like
-			result := s.db.Where("user_id = ? AND dao_code = ?", usess.Id, input.DaoCode).Delete(&dbmodels.UserLikedDao{})
+			result := s.db.Where("user_id = ? AND dao_code = ?", user.Id, input.DaoCode).Delete(&dbmodels.UserLikedDao{})
 			if result.Error != nil {
 				return false, fmt.Errorf("error removing like: %w", result.Error)
 			}

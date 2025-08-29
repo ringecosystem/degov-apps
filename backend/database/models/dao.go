@@ -63,7 +63,7 @@ type Dao struct {
 	MetricsCountMembers   int        `gorm:"column:metrics_count_members;not null;default:0" json:"metrics_count_members"`
 	MetricsSumPower       string     `gorm:"column:metrics_sum_power;type:varchar(255);not null;default:'0'" json:"metrics_sum_power"`
 	MetricsCountVote      int        `gorm:"column:metrics_count_vote;not null;default:0" json:"metrics_count_vote"`
-	LastTrackingBlock     int        `gorm:"column:last_tracking_block;not null;default:0" json:"last_tracking_block"` // Last block number tracked for this DAO
+	OffsetTrackingBlock   int        `gorm:"column:offset_tracking_proposal;default:0" json:"offset_tracking_proposal"` // Tracking proposals offset for this DAO
 	CTime                 time.Time  `gorm:"column:ctime;default:now()" json:"ctime"`
 	UTime                 *time.Time `gorm:"column:utime" json:"utime,omitempty"`
 }

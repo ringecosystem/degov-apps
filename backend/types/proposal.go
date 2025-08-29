@@ -16,8 +16,9 @@ type ProposalTrackingInput struct {
 }
 
 type TrackingStateProposalsInput struct {
-	DaoCode string
-	States  []dbmodels.ProposalState
+	DaoCode    string
+	TimesTrack *int
+	States     []dbmodels.ProposalState
 }
 
 // ProposalStateCountResult represents the result of proposal state count query

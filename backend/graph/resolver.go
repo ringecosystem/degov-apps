@@ -21,6 +21,7 @@ type Resolver struct {
 	userSubscribedService  *services.UserSubscribedDaoService
 	userInteractionService *services.UserInteractionService
 	evmChainService        *services.EvmChainService
+	subscribeService       *services.SubscribeService
 }
 
 func NewResolver() *Resolver {
@@ -34,5 +35,6 @@ func NewResolver() *Resolver {
 		userSubscribedService:  services.NewUserSubscribedDaoService(),
 		userInteractionService: services.NewUserInteractionService(),
 		evmChainService:        services.NewEvmChainService(),
+		subscribeService:       services.NewSubscribeService(),
 	}
 }

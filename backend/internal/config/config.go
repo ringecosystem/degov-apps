@@ -104,8 +104,8 @@ func setDefaults(v *viper.Viper) {
 	// Task defaults
 	v.SetDefault("TASK_DAO_SYNC_ENABLED", true)
 	v.SetDefault("TASK_DAO_SYNC_INTERVAL", "5m")
-	v.SetDefault("TASK_NOTIFICATION_CLEANUP_ENABLED", true)
-	v.SetDefault("TASK_NOTIFICATION_CLEANUP_INTERVAL", "30m")
+	v.SetDefault("TASK_VOTE_TRACKING_ENABLED", true)
+	v.SetDefault("TASK_VOTE_TRACKING_INTERVAL", "3m")
 	v.SetDefault("TASK_PROPOSAL_TRACKING_ENABLED", true)
 	v.SetDefault("TASK_PROPOSAL_TRACKING_INTERVAL", "3m")
 }
@@ -195,12 +195,12 @@ func (c *Config) GetTaskDAOSyncInterval() time.Duration {
 	return c.viper.GetDuration("TASK_DAO_SYNC_INTERVAL")
 }
 
-func (c *Config) GetTaskNotificationCleanupEnabled() bool {
-	return c.viper.GetBool("TASK_NOTIFICATION_CLEANUP_ENABLED")
+func (c *Config) GetTaskVoteTrackingEnabled() bool {
+	return c.viper.GetBool("TASK_VOTE_TRACKING_ENABLED")
 }
 
-func (c *Config) GetTaskNotificationCleanupInterval() time.Duration {
-	return c.viper.GetDuration("TASK_NOTIFICATION_CLEANUP_INTERVAL")
+func (c *Config) GetTaskVoteTrackingInterval() time.Duration {
+	return c.viper.GetDuration("TASK_VOTE_TRACKING_INTERVAL")
 }
 
 func (c *Config) GetTaskProposalTrackingEnabled() bool {

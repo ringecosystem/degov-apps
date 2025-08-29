@@ -75,7 +75,7 @@ type Dao {
   metricsCountMembers: Int!
   metricsSumPower: String!
   metricsCountVote: Int!
-  lastTrackingBlock: Int!
+  offsetTrackingProposal: Int!
   ctime: Time!
   utime: Time
   liked: Boolean
@@ -128,6 +128,14 @@ type LoginOutput {
   token: String!
 }
 
+type SubscribedDaoOutput {
+  daoCode: String!
+}
+
+type SubscribedProposalOutput {
+  daoCode: String!
+  proposalId: String!
+}
 
 ### === inputs
 
@@ -157,6 +165,29 @@ input EvmAbiInput {
   contract: String!
 }
 
+input FeatureSettingsDaoInput {
+  enableProposal: Boolean
+  enableVotingEndReminder: Boolean
+}
+
+input FeatureSettingsProposalInput {
+  enableVotingEndReminder: Boolean
+  enableVoted: Boolean
+  enableStateChanged: Boolean
+}
+
+
+input SubscribeDaoInput {
+  daoCode: String!
+  feature: FeatureSettingsDaoInput
+}
+
+input SubscribeProposalInput {
+  daoCode: String!
+  proposalId: String!
+  feature: FeatureSettingsProposalInput
+}
+
 ### ==== graphql
 
 type Query {
@@ -183,8 +214,9 @@ type Mutation {
 
   # User interactions
   modifyLikeDao(input: ModifyLikeDaoInput!): Boolean! @auth
-  # followDao(input: FollowDaoInput!): UserFollowedDao! @auth @authorize(rule: OWNER_ONLY)
-  # unfollowDao(userId: String!, daoCode: String!): Boolean! @auth @authorize(rule: OWNER_ONLY)
+
+  subscribeDao(input: SubscribeDaoInput!): SubscribedDaoOutput! @auth
+  subscribeProposal(input: SubscribeProposalInput!): SubscribedProposalOutput! @auth
 }
 
 # type Subscription {

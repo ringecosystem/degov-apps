@@ -34,7 +34,9 @@ docker-down:
 	docker-compose down
 
 generate:
+	go get github.com/99designs/gqlgen
 	go generate ./...
+	go mod tidy
 
 deps:
 	go mod tidy

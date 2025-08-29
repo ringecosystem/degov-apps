@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log/slog"
 	"time"
 
 	"gorm.io/gorm"
@@ -13,12 +14,14 @@ import (
 )
 
 type ProposalService struct {
-	db *gorm.DB
+	db                  *gorm.DB
+	notificationService *NotificationService
 }
 
 func NewProposalService() *ProposalService {
 	return &ProposalService{
-		db: database.GetDB(),
+		db:                  database.GetDB(),
+		notificationService: NewNotificationService(),
 	}
 }
 
@@ -27,7 +30,10 @@ func NewProposalService() *ProposalService {
 func (s *ProposalService) StoreProposalTracking(input types.ProposalTrackingInput) (bool, error) {
 	// Check if proposal already exists
 	var existingProposal dbmodels.ProposalTracking
-	err := s.db.Where("proposal_id = ? AND dao_code = ?", input.ProposalID, input.DaoCode).First(&existingProposal).Error
+	err := s.db.
+		Where("proposal_id = ? AND dao_code = ?", input.ProposalID, input.DaoCode).
+		First(&existingProposal).
+		Error
 
 	if err == nil {
 		// Proposal already exists
@@ -56,19 +62,26 @@ func (s *ProposalService) StoreProposalTracking(input types.ProposalTrackingInpu
 		return false, err
 	}
 
+	if err := s.notificationService.SaveEvent(dbmodels.NotificationEvent{
+		ChainID:    newProposal.ChainId,
+		DaoCode:    newProposal.DaoCode,
+		Type:       dbmodels.NotificationTypeNewProposal,
+		ProposalID: newProposal.ProposalId,
+		TimeEvent:  newProposal.CTime,
+	}); err != nil {
+		slog.Warn("failed to save notification event for new proposal", "error", err, "proposal_id", newProposal.ProposalId, "dao_code", newProposal.DaoCode)
+	}
+
 	return true, nil
 }
 
 func (s *ProposalService) TrackingStateProposals(input types.TrackingStateProposalsInput) ([]*dbmodels.ProposalTracking, error) {
 	var proposals []*dbmodels.ProposalTracking
 
-	// // Define the states we want to track
-	// trackingStates := []dbmodels.ProposalState{
-	// 	dbmodels.ProposalStatePending,
-	// 	dbmodels.ProposalStateActive,
-	// 	dbmodels.ProposalStateSucceeded,
-	// 	dbmodels.ProposalStateQueued,
-	// }
+	timesTrack := 10
+	if input.TimesTrack != nil {
+		timesTrack = *input.TimesTrack
+	}
 
 	// Query proposals with specific states, tracking limits, and time conditions
 	err := s.db.Where(`dao_code = ?
@@ -77,7 +90,7 @@ func (s *ProposalService) TrackingStateProposals(input types.TrackingStatePropos
 		AND (time_next_track IS NULL OR time_next_track <= ?)`,
 		input.DaoCode,
 		input.States,
-		10,
+		timesTrack,
 		time.Now(),
 	).
 		Order("proposal_created_at asc").
@@ -132,6 +145,15 @@ func (s *ProposalService) UpdateProposalTrackingError(proposalID, daoCode string
 			"time_next_track": nextTrackTime,
 			"message":         newMessage,
 			"utime":           time.Now(),
+		}).Error
+}
+
+func (s *ProposalService) UpdateOffsetTrackingVote(proposalID, daoCode string, offset int) error {
+	return s.db.Model(&dbmodels.ProposalTracking{}).
+		Where("proposal_id = ? AND dao_code = ?", proposalID, daoCode).
+		Updates(map[string]interface{}{
+			"offset_tracking_vote": offset,
+			"utime":                time.Now(),
 		}).Error
 }
 

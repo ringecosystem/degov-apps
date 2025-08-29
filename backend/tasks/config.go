@@ -34,19 +34,19 @@ func GetTaskDefinitions() []TaskDefinition {
 		},
 		{
 			Config: TaskConfig{
-				Name:     "notification-cleanup",
-				Interval: cfg.GetTaskNotificationCleanupInterval(),
-				Enabled:  cfg.GetTaskNotificationCleanupEnabled(),
+				Name:     "tracking-vote",
+				Interval: cfg.GetTaskVoteTrackingInterval(),
+				Enabled:  cfg.GetTaskVoteTrackingEnabled(),
 			},
-			Constructor: func() Task { return NewNotificationTask() },
+			Constructor: func() Task { return NewTrackingVoteTask() },
 		},
 		{
 			Config: TaskConfig{
-				Name:     "proposal-tracking-sync",
+				Name:     "tracking-proposal",
 				Interval: cfg.GetTaskProposalTrackingInterval(),
 				Enabled:  cfg.GetTaskProposalTrackingEnabled(),
 			},
-			Constructor: func() Task { return NewProposalTrackingTask() },
+			Constructor: func() Task { return NewTrackingProposalTask() },
 		},
 		// Add more task definitions here
 	}

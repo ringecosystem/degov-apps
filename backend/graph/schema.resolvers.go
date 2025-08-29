@@ -33,6 +33,26 @@ func (r *mutationResolver) ModifyLikeDao(ctx context.Context, input gqlmodels.Mo
 	return result, err
 }
 
+// SubscribeDao is the resolver for the subscribeDao field.
+func (r *mutationResolver) SubscribeDao(ctx context.Context, input gqlmodels.SubscribeDaoInput) (*gqlmodels.SubscribedDaoOutput, error) {
+	user, _ := r.authUtils.GetUser(ctx)
+	result, err := r.subscribeService.SubscribeDao(types.BasicInput[gqlmodels.SubscribeDaoInput]{
+		User:  user,
+		Input: input,
+	})
+	return result, err
+}
+
+// SubscribeProposal is the resolver for the subscribeProposal field.
+func (r *mutationResolver) SubscribeProposal(ctx context.Context, input gqlmodels.SubscribeProposalInput) (*gqlmodels.SubscribedProposalOutput, error) {
+	user, _ := r.authUtils.GetUser(ctx)
+	result, err := r.subscribeService.SubscribeProposal(types.BasicInput[gqlmodels.SubscribeProposalInput]{
+		User:  user,
+		Input: input,
+	})
+	return result, err
+}
+
 // Nonce is the resolver for the nonce field.
 func (r *queryResolver) Nonce(ctx context.Context, input gqlmodels.GetNonceInput) (string, error) {
 	nonce, err := r.authService.Nonce(input)
