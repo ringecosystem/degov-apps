@@ -45,12 +45,13 @@ func (t *NotificationDispatcherTask) dispatcherNotificationRecord() error {
 		return err
 	}
 	for _, record := range records {
+		verified := true
 		channels, err := t.userInteractionService.ListChannel(types.BasicInput[types.ListChannelInput]{
 			User: &types.UserSessInfo{
 				Id: record.UserID,
 			},
 			Input: types.ListChannelInput{
-				Verified: true,
+				Verified: &verified,
 			},
 		})
 		timesRetry := record.TimesRetry + 1

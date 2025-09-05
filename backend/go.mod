@@ -20,6 +20,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/spf13/viper v1.20.1
 	github.com/spruceid/siwe-go v0.2.1
+	github.com/vanng822/go-premailer v1.25.0
 	github.com/vektah/gqlparser/v2 v2.5.30
 	github.com/wealdtech/go-ens/v3 v3.6.0
 	go.uber.org/zap v1.27.0
@@ -92,7 +93,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
-	github.com/vanng822/go-premailer v1.25.0 // indirect
 	github.com/wealdtech/go-multicodec v1.4.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect

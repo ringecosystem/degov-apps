@@ -45,7 +45,7 @@ type UpdateRecordRetryTimes struct {
 }
 
 type ListChannelInput struct {
-	Verified bool
+	Verified *bool
 }
 
 type NotifyInput struct {

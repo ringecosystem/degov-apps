@@ -297,15 +297,24 @@ func (s *UserInteractionService) resendOTPForChannel(baseInput types.BasicInput[
 
 }
 
-func (s UserInteractionService) ListChannel(baseInput types.BasicInput[types.ListChannelInput]) ([]dbmodels.NotificationChannel, error) {
+func (s UserInteractionService) ListChannel(
+	baseInput types.BasicInput[types.ListChannelInput],
+) ([]dbmodels.NotificationChannel, error) {
 	user := baseInput.User
-	verified := 0
-	if baseInput.Input.Verified {
-		verified = 1
-	}
 	var results []dbmodels.NotificationChannel
-	s.db.
-		Where("user_id = ? and verified = ?", user.Id, verified).
-		Find(&results)
+
+	query := s.db.Where("user_id = ?", user.Id)
+
+	if baseInput.Input.Verified != nil {
+		verified := 0
+		if *baseInput.Input.Verified {
+			verified = 1
+		}
+		query = query.Where("verified = ?", verified)
+	}
+
+	if err := query.Find(&results).Error; err != nil {
+		return nil, err
+	}
 	return results, nil
 }

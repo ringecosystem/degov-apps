@@ -58,18 +58,6 @@ enum NotificationChannelType {
 
 ### ==== entities
 
-type User {
-  id: ID!
-  address: String!
-  email: String
-  # likedDaos: [UserLikedDao!]!
-  # followedDaos: [UserFollowedDao!]!
-  # channels: [UserChannel!]!
-  # notificationRecords: [NotificationRecord!]!
-  ctime: Time!
-  utime: Time
-}
-
 type Dao {
   id: ID!
   chainId: Int!
@@ -180,6 +168,16 @@ type ResendOTPOutput {
   rateLimit: Int
 }
 
+type NotificationChannel {
+  id: String!
+  channelType: NotificationChannelType!
+  channelValue: String!
+  verified: Boolean!
+  payload: String
+  ctime: Time!
+}
+
+
 ### === inputs
 
 input GetNonceInput {
@@ -259,6 +257,9 @@ type Query {
 
   # Tool queries
   evmAbi(input: EvmAbiInput!): [EvmAbiOutput!] @auth(required: false)
+
+  # notifications
+  listNotificationChannels: [NotificationChannel!] @auth
 
   # subscribe
   subscribedDaos: [SubscribedDao!]! @auth

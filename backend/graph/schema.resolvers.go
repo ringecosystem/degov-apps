@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jinzhu/copier"
 	dbmodels "github.com/ringecosystem/degov-apps/database/models"
 	gqlmodels "github.com/ringecosystem/degov-apps/graph/models"
 	"github.com/ringecosystem/degov-apps/types"
@@ -145,6 +146,21 @@ func (r *queryResolver) DaoConfig(ctx context.Context, input *gqlmodels.GetDaoCo
 func (r *queryResolver) EvmAbi(ctx context.Context, input gqlmodels.EvmAbiInput) ([]*gqlmodels.EvmAbiOutput, error) {
 	// panic(fmt.Errorf("not implemented: EvmAbi - evmAbi"))
 	return r.evmChainService.GetAbi(input)
+}
+
+// ListNotificationChannels is the resolver for the listNotificationChannels field.
+func (r *queryResolver) ListNotificationChannels(ctx context.Context) ([]*gqlmodels.NotificationChannel, error) {
+	user, _ := r.authUtils.GetUser(ctx)
+	channels, err := r.userInteractionService.ListChannel(types.BasicInput[types.ListChannelInput]{
+		User:  user,
+		Input: types.ListChannelInput{},
+	})
+	if err != nil {
+		return nil, err
+	}
+	var result []*gqlmodels.NotificationChannel
+	copier.Copy(&result, &channels)
+	return result, nil
 }
 
 // SubscribedDaos is the resolver for the subscribedDaos field.
