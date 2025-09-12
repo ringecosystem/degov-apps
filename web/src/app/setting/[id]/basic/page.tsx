@@ -7,7 +7,6 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { useAccount } from 'wagmi';
 import { z } from 'zod';
 
 import { useIsMobileAndSubSection } from '@/app/setting/_hooks/isMobileAndSubSection';
@@ -25,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { InputAddon } from '@/components/ui/input-addon';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { useAccount } from '@/hooks/useAccount';
 
 const formSchema = z.object({
   name: z.string().min(1, 'DAO name is required'),

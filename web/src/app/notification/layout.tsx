@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 
+import { AuthGuard } from './_components';
 import { useIsMobileAndSubSection } from './_hooks/isMobileAndSubSection';
 
 const NAVS = [
@@ -75,7 +76,11 @@ export default function NotificationLayout({ children }: { children: React.React
           </aside>
         )}
 
-        <main className="flex-1">{children}</main>
+        <main className="flex flex-1 flex-col">
+          <div className="md:bg-card h-[calc(100vh-300px)] space-y-[15px] md:space-y-[20px] md:rounded-[14px] md:p-[20px]">
+            <AuthGuard>{children}</AuthGuard>
+          </div>
+        </main>
       </div>
     </div>
   );

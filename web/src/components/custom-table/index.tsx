@@ -126,7 +126,7 @@ export function CustomTable<T extends Record<string, unknown>>({
           <TableBody>
             {isLoading
               ? LoadingRows
-              : dataSource.length > 0
+              : dataSource?.length > 0
                 ? dataSource.map((record, index) => {
                     const rowProps = onRow ? onRow(record, index) : {};
                     return (
@@ -151,7 +151,7 @@ export function CustomTable<T extends Record<string, unknown>>({
         </Table>
       </div>
 
-      {!isLoading && dataSource.length === 0 && (
+      {!isLoading && dataSource?.length === 0 && (
         <Empty
           label={emptyText}
           style={{

@@ -6,6 +6,12 @@ export interface AuthContextType {
   token: string | null;
   setToken: (token: string | null) => void;
   isAuthenticated: boolean;
+  // URL auth support
+  urlAddress: string | null;
+  isUsingUrlAuth: boolean;
+  clearUrlAuth: () => void;
+  // Clear URL auth on 401/unauthorized errors
+  clearUrlAuthOnError: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

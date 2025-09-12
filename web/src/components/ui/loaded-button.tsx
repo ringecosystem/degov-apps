@@ -29,10 +29,10 @@ export function LoadedButton({
       {...props}
     >
       {isLoading ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <span className="flex items-center justify-center gap-[5px]">
+          <Loader2 className="h-4 w-4 animate-spin" />
           {children}
-        </>
+        </span>
       ) : (
         children
       )}

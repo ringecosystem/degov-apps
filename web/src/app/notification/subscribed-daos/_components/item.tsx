@@ -1,7 +1,7 @@
 import Image from 'next/image';
 
 type ItemProps = {
-  id: number;
+  id: string;
   name: string;
   logo: string;
   network: string;

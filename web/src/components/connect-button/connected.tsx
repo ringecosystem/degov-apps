@@ -2,7 +2,7 @@ import { ChevronDown, Power } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useMemo } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount as useWagmiAccount } from 'wagmi';
 
 import { AddressAvatar } from '@/components/address-avatar';
 import { AddressResolver } from '@/components/address-resolver';
@@ -18,17 +18,23 @@ import { useDisconnectWallet } from '@/hooks/useDisconnectWallet';
 import { formatShortAddress } from '@/utils';
 
 import { Button } from '../ui/button';
+
 interface ConnectedProps {
   address: `0x${string}`;
+  authSource?: 'wallet' | 'url' | 'none';
 }
 
-export const Connected = ({ address }: ConnectedProps) => {
+export const Connected = ({ address, authSource = 'wallet' }: ConnectedProps) => {
   const { disconnectWallet } = useDisconnectWallet();
-  const { chain } = useAccount();
+  const { chain } = useWagmiAccount();
 
   const getBlockExplorerUrl = useMemo(() => {
-    return `${chain?.blockExplorers?.default?.url}/address/${address}`;
-  }, [chain, address]);
+    // Only show block explorer for wallet connections that have chain info
+    if (authSource === 'wallet' && chain?.blockExplorers?.default?.url) {
+      return `${chain.blockExplorers.default.url}/address/${address}`;
+    }
+    return null;
+  }, [chain, address, authSource]);
 
   const handleDisconnect = useCallback(() => {
     disconnectWallet(address);
@@ -61,30 +67,36 @@ export const Connected = ({ address }: ConnectedProps) => {
             <TooltipContent>{address}</TooltipContent>
           </Tooltip>
           <ClipboardIconButton text={address} size={16} className="size-[16px] flex-shrink-0" />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href={getBlockExplorerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex cursor-pointer items-center justify-center transition-colors hover:opacity-80"
-              >
-                <Image
-                  src="/external-link.svg"
-                  alt="Open in block explorer"
-                  width={16}
-                  height={16}
-                  className="size-[16px] flex-shrink-0 opacity-50"
-                />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>View on block explorer</TooltipContent>
-          </Tooltip>
+          {getBlockExplorerUrl && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={getBlockExplorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex cursor-pointer items-center justify-center transition-colors hover:opacity-80"
+                >
+                  <Image
+                    src="/external-link.svg"
+                    alt="Open in block explorer"
+                    width={16}
+                    height={16}
+                    className="size-[16px] flex-shrink-0 opacity-50"
+                  />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>View on block explorer</TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <DropdownMenuSeparator className="my-[20px]" />
         <div className="flex flex-col justify-center gap-[20px]">
-          {/* <Button asChild className="h-[40px] w-full gap-[5px] rounded-[100px]" variant="outline">
-            <Link href="/notification">
+          <Button
+            asChild
+            className="h-[40px] w-full gap-[5px] rounded-[100px] lg:hidden"
+            variant="outline"
+          >
+            <Link href="/notification/subscription">
               <Image
                 src="/bell.svg"
                 alt="bell"
@@ -94,7 +106,7 @@ export const Connected = ({ address }: ConnectedProps) => {
               />
               <span className="text-[14px]">Notification</span>
             </Link>
-          </Button> */}
+          </Button>
           <Button
             onClick={handleDisconnect}
             className="h-[40px] w-full gap-[5px] rounded-[100px]"

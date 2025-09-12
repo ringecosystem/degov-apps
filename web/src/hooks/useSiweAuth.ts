@@ -1,93 +1,102 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { toast } from 'react-toastify';
-import { createSiweMessage } from 'viem/siwe';
+import { useCallback, useState, useEffect } from 'react';
 import { useAccount, useSignMessage, useChainId } from 'wagmi';
 
-import { useAuth } from '@/contexts/auth';
-import { createPublicClient } from '@/lib/graphql/client';
-import { useLogin } from '@/lib/graphql/hooks';
-import { QUERY_NONCE } from '@/lib/graphql/queries';
-import type { NonceVariables } from '@/lib/graphql/types';
+import { useAuth as useAuthContext } from '@/contexts/auth';
+import { globalAuthManager, type AuthResult } from '@/lib/auth/global-auth-manager';
+import { siweService } from '@/lib/auth/siwe-service';
 
-
+// Imperative SIWE actions: authenticate and signOut.
+// Keeps context/useAuth for reading auth state; avoids name clash.
 export const useSiweAuth = () => {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { setToken } = useAuth();
+  const { setToken } = useAuthContext();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const { signMessageAsync } = useSignMessage();
-  const loginMutation = useLogin();
 
-  const getNonce = useCallback(async (): Promise<string> => {
-    const client = createPublicClient();
-    const variables: NonceVariables = { input: { length: 32 } };
-    const data = await client.request<{ nonce: string }>(QUERY_NONCE, variables);
-    return data.nonce;
-  }, []);
+  // Sync local isAuthenticating state with global state
+  useEffect(() => {
+    const checkGlobalAuthState = () => {
+      const globalIsAuthenticating = globalAuthManager.getIsAuthenticating();
+      if (globalIsAuthenticating !== isAuthenticating) {
+        setIsAuthenticating(globalIsAuthenticating);
+      }
+    };
 
-  const createMessage = useCallback((address: `0x${string}`, nonce: string) => {
-    return createSiweMessage({
-      domain: typeof window !== 'undefined' ? window.location.host : 'apps.degov.ai',
-      address,
-      statement: `DeGov.AI wants you to sign in with your Ethereum account: ${address}`,
-      uri: typeof window !== 'undefined' ? window.location.origin : 'https://apps.degov.ai',
-      version: '1',
-      chainId,
-      nonce,
-    });
-  }, [chainId]);
+    // Check immediately and then periodically
+    checkGlobalAuthState();
+    const interval = setInterval(checkGlobalAuthState, 100);
 
-  const authenticate = useCallback(async (): Promise<boolean> => {
+    return () => clearInterval(interval);
+  }, [isAuthenticating]);
+
+  // Internal authentication function that does the actual work
+  const performAuthentication = useCallback(async (): Promise<AuthResult> => {
     if (!isConnected || !address) {
-      toast.error('Please connect your wallet first');
-      return false;
+      const errorMsg = 'Please connect your wallet first';
+      setError(new Error(errorMsg));
+      return { success: false, error: errorMsg };
     }
 
-    setIsAuthenticating(true);
+    setError(null);
 
     try {
-      const nonce = await getNonce();
-      if (!nonce) {
-        throw new Error('Failed to get nonce');
-      }
-
-      const message = createMessage(address, nonce);
-
-      const signature = await signMessageAsync({ message });
-
-      const token = await loginMutation.mutateAsync({
-        input: {
-          message,
-          signature
-        }
+      const result = await siweService.authenticateWithWallet({
+        address,
+        chainId,
+        signMessageAsync
       });
 
-      setToken(token);
-      return true;
-
-    } catch (error) {
-      console.error('Authentication failed:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('User rejected')) {
-          toast.error('Authentication cancelled');
-        } else {
-          toast.error(`Authentication failed: ${error.message}`);
-        }
+      if (result.success && result.token) {
+        setToken(result.token);
       } else {
-        toast.error('Authentication failed. Please try again.');
+        setError(new Error(result.error || 'Authentication failed'));
       }
-      return false;
-    } finally {
-      setIsAuthenticating(false);
+
+      return result;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      return { success: false, error: error.message };
     }
-  }, [isConnected, address, getNonce, createMessage, signMessageAsync, loginMutation, setToken]);
+  }, [isConnected, address, chainId, signMessageAsync, setToken]);
+
+  // Public authenticate method that uses global auth manager
+  const authenticate = useCallback(async (): Promise<AuthResult> => {
+    return await globalAuthManager.authenticate(performAuthentication);
+  }, [performAuthentication]);
+
+  const signOut = useCallback(async (): Promise<void> => {
+    try {
+      await siweService.signOut();
+      setToken(null);
+      setError(null);
+      // Reset global auth state on sign out
+      globalAuthManager.reset();
+    } catch (err) {
+      console.error('Sign out failed:', err);
+    }
+  }, [setToken]);
 
   return {
     authenticate,
+    signOut,
+
+    // State
     isAuthenticating,
-    canAuthenticate: isConnected && !!address
+    error,
+    canAuthenticate: isConnected && !!address,
+
+    // Wallet state
+    address,
+    isConnected,
+    chainId
   };
 };
+
+// Export AuthResult type for convenience
+export type { AuthResult };

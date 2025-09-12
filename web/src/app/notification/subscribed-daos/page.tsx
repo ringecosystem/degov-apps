@@ -2,68 +2,46 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { toast } from 'react-toastify';
 
 import { useIsMobileAndSubSection } from '@/app/notification/_hooks/isMobileAndSubSection';
 import { CustomTable } from '@/components/custom-table';
 import type { ColumnType } from '@/components/custom-table';
 import { useConfirm } from '@/contexts/confirm-context';
+import { useSubscribedDaos, useUnsubscribeDao } from '@/hooks/useNotification';
+import { useQueryDaos } from '@/lib/graphql/hooks';
+import type { SubscribedDaoItem, Dao } from '@/lib/graphql/types';
+import { extractErrorMessage } from '@/utils/graphql-error-handler';
 
 import { Item } from './_components/item';
-// Mock data for subscribed DAOs
-const daoSubscriptions = [
-  {
-    id: 1,
-    name: 'DAO Name 1',
-    logo: '/example/dao1.svg',
-    network: 'Ethereum',
-    networkLogo: '/example/network1.svg'
-  },
-  {
-    id: 2,
-    name: 'DAO Name 2',
-    logo: '/example/dao2.svg',
-    network: 'Ethereum',
-    networkLogo: '/example/network1.svg'
-  },
-  {
-    id: 3,
-    name: 'DAO Name 3',
-    logo: '/example/dao3.svg',
-    network: 'Ethereum',
-    networkLogo: '/example/network1.svg'
-  }
-];
+
+type EnhancedSubscribedDaoItem = SubscribedDaoItem &
+  Record<string, unknown> & {
+    enhancedDao?: Dao;
+  };
 
 type ColumnProps = {
-  onRemove: (id: number) => void;
+  onRemove: (daoCode: string) => void;
 };
 
-const columns = ({
-  onRemove
-}: ColumnProps): ColumnType<{
-  id: number;
-  name: string;
-  logo: string;
-  network: string;
-  networkLogo: string;
-}>[] => [
+const columns = ({ onRemove }: ColumnProps): ColumnType<EnhancedSubscribedDaoItem>[] => [
   {
     title: 'Name',
-    key: 'name',
+    key: 'dao',
     width: 375,
     render: (value) => (
       <div className="flex items-center gap-2">
         <div className="bg-background flex h-8 w-8 items-center justify-center rounded-full">
           <Image
-            src={value.logo || '/example/dao-placeholder.svg'}
-            alt={value.name}
+            src={value.enhancedDao?.logo ?? ''}
+            alt={value.dao?.name ?? ''}
             width={24}
             height={24}
+            className="rounded-full"
           />
         </div>
-        <span>{value.name}</span>
+        <span>{value.dao?.name || 'Unknown DAO'}</span>
       </div>
     )
   },
@@ -74,13 +52,16 @@ const columns = ({
     className: 'text-center',
     render(value) {
       return (
-        <Link
-          href={`/setting/safes/${value?.id}`}
-          className="flex items-center justify-center gap-[10px]"
-        >
-          <Image src={value?.networkLogo} alt="safe" width={16} height={17} />
-          <span className="text-[16px]">{value?.network}</span>
-        </Link>
+        <div className="flex items-center justify-center gap-[10px]">
+          <Image
+            src={value.enhancedDao?.chainLogo ?? ''}
+            alt={value.enhancedDao?.chainName ?? ''}
+            width={16}
+            height={17}
+            className="rounded-full"
+          />
+          <span className="text-[16px]">{value.enhancedDao?.chainName || 'Unknown Network'}</span>
+        </div>
       );
     }
   },
@@ -93,7 +74,7 @@ const columns = ({
       return (
         <button
           className="cursor-pointer transition-opacity hover:opacity-80"
-          onClick={() => onRemove(value.id)}
+          onClick={() => onRemove(value.dao?.code || '')}
         >
           <Image
             src="/unsubscribed.svg"
@@ -109,26 +90,51 @@ const columns = ({
 ];
 
 export default function SubscribedDAOsPage() {
-  const [subscriptions, setSubscriptions] = useState(daoSubscriptions);
+  const { data: subscriptions, isLoading, refetch } = useSubscribedDaos();
+  const { data: daosData, isLoading: isDaosLoading } = useQueryDaos();
+  const unsubscribeMutation = useUnsubscribeDao();
   const { confirm } = useConfirm();
   const isMobileAndSubSection = useIsMobileAndSubSection();
+
+  const enhancedSubscriptions = useMemo(() => {
+    if (!subscriptions || !daosData?.daos) return [];
+
+    return subscriptions.map((subscription): EnhancedSubscribedDaoItem => {
+      const enhancedDao = daosData.daos.find((dao) => dao.code === subscription.dao.code);
+      return {
+        ...subscription,
+        enhancedDao
+      };
+    });
+  }, [subscriptions, daosData?.daos]);
+
   const handleUnsubscribe = useCallback(
-    (id: number) => {
+    (daoCode: string) => {
+      if (!daoCode) return;
+
       confirm({
         title: 'Unsubscribe',
-        description: 'Are you sure you want to unsubscribe notification?',
+        description: 'Are you sure you want to unsubscribe from this DAO?',
         cancelText: 'Cancel',
         confirmText: 'Confirm',
         onConfirm: () => {
-          setSubscriptions((prev) => prev.filter((sub) => sub.id !== id));
+          return unsubscribeMutation.mutateAsync(daoCode, {
+            onSuccess: () => {
+              refetch();
+            },
+            onError: (error: any) => {
+              const errorMessage = extractErrorMessage(error) || 'Failed to unsubscribe DAO';
+              toast.error(errorMessage);
+            }
+          });
         }
       });
     },
-    [confirm]
+    [confirm, unsubscribeMutation, refetch]
   );
 
   return (
-    <div className="md:bg-card md:h-[calc(100vh-300px)] md:rounded-[14px]">
+    <>
       {isMobileAndSubSection && (
         <Link href={`/notification`} className="flex items-center gap-[5px] md:gap-[10px]">
           <Image
@@ -141,23 +147,27 @@ export default function SubscribedDAOsPage() {
           <h1 className="text-[18px] font-semibold">Subscribed DAOs</h1>
         </Link>
       )}
-      <CustomTable
+      <CustomTable<EnhancedSubscribedDaoItem>
         columns={columns({ onRemove: handleUnsubscribe })}
-        dataSource={subscriptions}
-        isLoading={false}
-        rowKey="id"
+        dataSource={(enhancedSubscriptions as EnhancedSubscribedDaoItem[]) ?? []}
+        isLoading={isLoading || isDaosLoading}
+        rowKey={(record) => record.dao?.code || ''}
         className="hidden md:block"
       />
 
       <div className="mt-[15px] flex flex-col gap-[15px] md:hidden">
-        {subscriptions.map((subscription) => (
+        {enhancedSubscriptions.map((subscription) => (
           <Item
-            key={subscription.id}
-            {...subscription}
-            onRemove={() => handleUnsubscribe(subscription.id)}
+            key={subscription.dao?.code}
+            id={subscription.dao?.code || ''}
+            name={subscription.dao?.name || 'Unknown DAO'}
+            logo={subscription.enhancedDao?.logo || ''}
+            network={subscription.enhancedDao?.chainName || 'Unknown Network'}
+            networkLogo={subscription.enhancedDao?.chainLogo || ''}
+            onRemove={() => handleUnsubscribe(subscription.dao?.code || '')}
           />
         ))}
       </div>
-    </div>
+    </>
   );
 }

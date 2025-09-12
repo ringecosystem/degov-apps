@@ -1,14 +1,14 @@
 import { cn } from '@/lib/utils';
 
 export enum ProposalState {
-  Pending = 0,
-  Active = 1,
-  Canceled = 2,
-  Defeated = 3,
-  Succeeded = 4,
-  Queued = 5,
-  Expired = 6,
-  Executed = 7
+  Pending = 'PENDING',
+  Active = 'ACTIVE',
+  Canceled = 'CANCELED',
+  Defeated = 'DEFEATED',
+  Succeeded = 'SUCCEEDED',
+  Queued = 'QUEUED',
+  Expired = 'EXPIRED',
+  Executed = 'EXECUTED'
 }
 export const getDisplayText = (status: ProposalState) => {
   switch (status) {

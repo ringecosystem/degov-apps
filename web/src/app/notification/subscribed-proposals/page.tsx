@@ -2,65 +2,58 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 import { useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 import { useIsMobileAndSubSection } from '@/app/notification/_hooks/isMobileAndSubSection';
 import { CustomTable } from '@/components/custom-table';
 import type { ColumnType } from '@/components/custom-table';
-import { ProposalState, ProposalStatus } from '@/components/proposal-status';
+import { ProposalStatus } from '@/components/proposal-status';
 import { useConfirm } from '@/contexts/confirm-context';
+import { useSubscribedProposals, useUnsubscribeProposal } from '@/hooks/useNotification';
+import type { SubscribedProposalItem } from '@/lib/graphql/types';
+import { extractErrorMessage } from '@/utils/graphql-error-handler';
 
 import { Item } from './_components/item';
-// Mock data for subscribed proposals
-const proposalSubscriptions = [
-  {
-    id: 1,
-    name: 'Proposal 1: Fund Allocation',
-    daoName: 'DAO Name 1',
-    daoLogo: '/example/dao1.svg',
-    status: ProposalState.Pending
-  },
-  {
-    id: 2,
-    name: 'Enhancing Multichain Governance: Upgrading RARI Governance Token on ArbitrumEnhancing Multichain Governance: Upgrading RARI Governance Token on Arbitrum',
-    daoName: 'DAO Name 2',
-    daoLogo: '/example/dao2.svg',
-    status: ProposalState.Active
-  },
-  {
-    id: 3,
-    name: 'Proposal 3: Community Initiative',
-    daoName: 'DAO Name 1',
-    daoLogo: '/example/dao1.svg',
-    status: ProposalState.Succeeded
-  }
-];
 
-const columns = ({ onRemove }: ColumnProps): ColumnType<any>[] => [
+type ColumnProps = {
+  onRemove: (daoCode: string, proposalId: string) => void;
+};
+
+const columns = ({ onRemove }: ColumnProps): ColumnType<SubscribedProposalItem>[] => [
+  {
+    title: 'DAO',
+    key: 'daoName',
+    width: '20.9%',
+    className: 'text-left',
+    render: (value: SubscribedProposalItem) => {
+      return <div className="truncate">{value.dao?.chainName || 'Unknown Chain'}</div>;
+    }
+  },
   {
     title: 'Proposal',
-    key: 'name',
-    width: '60%',
+    key: 'proposalTitle',
+    width: '40.7%',
     className: 'text-left',
     style: { maxWidth: '0' },
-    render: (value) => {
+    render: (value: SubscribedProposalItem) => {
       return (
-        <div title={value.name} className="truncate">
-          {value.name}
+        <div title={value.proposal?.title || 'Proposal'} className="truncate">
+          {value.proposal?.title || 'Untitled Proposal'}
         </div>
       );
     }
   },
+
   {
     title: 'Status',
-    key: 'status',
-    width: 250,
+    key: 'proposalStatus',
+    width: '28.1%',
     className: 'text-center',
-    render: (value) => {
+    render: (value: SubscribedProposalItem) => {
       return (
         <div className="flex justify-center">
-          <ProposalStatus status={value.status} />
+          <ProposalStatus status={value.proposal?.state as any} />
         </div>
       );
     }
@@ -68,13 +61,13 @@ const columns = ({ onRemove }: ColumnProps): ColumnType<any>[] => [
   {
     title: 'Action',
     key: 'action',
-    width: 80,
+    width: '9.6%',
     className: 'text-right',
-    render(value) {
+    render(value: SubscribedProposalItem) {
       return (
         <button
           className="cursor-pointer transition-opacity hover:opacity-80"
-          onClick={() => onRemove(value.id)}
+          onClick={() => onRemove(value.proposal?.daoCode || '', value.proposal?.proposalId || '')}
         >
           <Image
             src="/unsubscribed.svg"
@@ -89,29 +82,43 @@ const columns = ({ onRemove }: ColumnProps): ColumnType<any>[] => [
   }
 ];
 
-type ColumnProps = {
-  onRemove: (id: number) => void;
-};
-
 export default function SubscribedProposalsPage() {
   const isMobileAndSubSection = useIsMobileAndSubSection();
-  const [subscriptions, setSubscriptions] = useState(proposalSubscriptions);
+  const { data: subscriptions, isLoading, refetch } = useSubscribedProposals();
+
+  const unsubscribeProposalMutation = useUnsubscribeProposal();
   const { confirm } = useConfirm();
+
   const handleUnsubscribe = useCallback(
-    (id: number) => {
+    (daoCode: string, proposalId: string) => {
+      if (!daoCode || !proposalId) return;
+
       confirm({
         title: 'Unsubscribe',
-        description: 'Are you sure you want to unsubscribe notification?',
+        description: 'Are you sure you want to unsubscribe notifications for this proposal??',
         cancelText: 'Cancel',
         confirmText: 'Confirm',
-        onConfirm: () => setSubscriptions((prev) => prev.filter((sub) => sub.id !== id))
+        onConfirm: () => {
+          return unsubscribeProposalMutation.mutateAsync(
+            { daoCode, proposalId },
+            {
+              onSuccess: () => {
+                refetch();
+              },
+              onError: (error: any) => {
+                const errorMessage = extractErrorMessage(error) || 'Failed to unsubscribe proposal';
+                toast.error(errorMessage);
+              }
+            }
+          );
+        }
       });
     },
-    [confirm]
+    [confirm, unsubscribeProposalMutation, refetch]
   );
 
   return (
-    <div className="md:bg-card space-y-[15px] md:min-h-[calc(100vh-300px)] md:space-y-0 md:rounded-[14px]">
+    <>
       {isMobileAndSubSection && (
         <Link href={`/notification`} className="flex items-center gap-[5px] md:gap-[10px]">
           <Image
@@ -124,23 +131,32 @@ export default function SubscribedProposalsPage() {
           <h1 className="text-[18px] font-semibold">Subscribed Proposals</h1>
         </Link>
       )}
-      <CustomTable
+      <CustomTable<SubscribedProposalItem>
         columns={columns({ onRemove: handleUnsubscribe })}
-        dataSource={subscriptions}
-        isLoading={false}
-        rowKey="id"
+        dataSource={(subscriptions as SubscribedProposalItem[]) ?? []}
+        isLoading={isLoading}
+        rowKey={(record) => `${record.proposal?.daoCode}-${record.proposal?.proposalId}` || ''}
         className="hidden md:block"
       />
 
       <div className="mt-[15px] flex flex-col gap-[15px] md:hidden">
-        {subscriptions.map((subscription) => (
+        {(subscriptions || []).map((subscription) => (
           <Item
-            key={subscription.id}
-            {...subscription}
-            onRemove={() => handleUnsubscribe(subscription.id)}
+            key={`${subscription.proposal?.daoCode}-${subscription.proposal?.proposalId}`}
+            id={subscription.proposal?.proposalId || ''}
+            name={subscription.proposal?.title || 'Untitled Proposal'}
+            daoName={subscription.dao?.name || 'Unknown DAO'}
+            daoLogo={subscription.dao?.logo || '/example/dao-placeholder.svg'}
+            status={subscription.proposal?.state}
+            onRemove={() =>
+              handleUnsubscribe(
+                subscription.proposal?.daoCode || '',
+                subscription.proposal?.proposalId || ''
+              )
+            }
           />
         ))}
       </div>
-    </div>
+    </>
   );
 }

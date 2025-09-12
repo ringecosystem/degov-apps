@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+import { tokenManager } from '@/lib/auth/token-manager';
+import { parseUrlAuthParams, clearUrlAuthParams, hasUrlAuthParams } from '@/utils/url-params';
 
 import { AuthContext } from './context';
 
 import type { ReactNode } from 'react';
-
-const AUTH_TOKEN_KEY = 'degov_auth_token';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -14,39 +15,58 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [token, setTokenState] = useState<string | null>(null);
+  const [urlAddress, setUrlAddress] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize token from localStorage on mount
+  const isUsingUrlAuth = !!(token && urlAddress);
+  const isAuthenticated = !!token;
+
+  // Initialize from storage and URL parameters on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-      setTokenState(storedToken);
-      setIsInitialized(true);
+      const urlParams = parseUrlAuthParams();
+      const storedAuthData = tokenManager.getAuthData();
 
-      // Listen for auth token changes (from SIWE adapter)
-      const handleTokenChange = (e: Event) => {
-        const customEvent = e as CustomEvent<{ token: string | null }>;
-        setTokenState(customEvent.detail.token);
-      };
-      
-      window.addEventListener('auth-token-change', handleTokenChange);
-      return () => window.removeEventListener('auth-token-change', handleTokenChange);
+      // Clear URL params first
+      if (urlParams.token || urlParams.address) {
+        clearUrlAuthParams();
+      }
+
+      // Simple priority: stored > URL params
+      if (storedAuthData.token) {
+        setTokenState(storedAuthData.token);
+        setUrlAddress(storedAuthData.address);
+      } else if (urlParams.token && urlParams.address) {
+        // Save URL params and set state
+        tokenManager.setToken(urlParams.token);
+        tokenManager.setAddress(urlParams.address);
+        setTokenState(urlParams.token);
+        setUrlAddress(urlParams.address);
+      }
+
+      setIsInitialized(true);
     }
   }, []);
 
   const setToken = (newToken: string | null) => {
     setTokenState(newToken);
-    
-    if (typeof window !== 'undefined') {
-      if (newToken) {
-        localStorage.setItem(AUTH_TOKEN_KEY, newToken);
-      } else {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-      }
+    if (newToken) {
+      setUrlAddress(null);
+      tokenManager.setToken(newToken);
+      tokenManager.setAddress(null);
+    } else {
+      setUrlAddress(null);
+      tokenManager.setToken(null);
+      tokenManager.setAddress(null);
     }
   };
 
-  const isAuthenticated = Boolean(token);
+  const clearAuth = () => {
+    setTokenState(null);
+    setUrlAddress(null);
+    tokenManager.setToken(null);
+    tokenManager.setAddress(null);
+  };
 
   // Don't render children until token is initialized from localStorage
   if (!isInitialized) {
@@ -54,7 +74,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }
 
   return (
-    <AuthContext.Provider value={{ token, setToken, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        setToken,
+        isAuthenticated,
+        urlAddress,
+        isUsingUrlAuth,
+        clearUrlAuth: clearAuth,
+        clearUrlAuthOnError: clearAuth
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
